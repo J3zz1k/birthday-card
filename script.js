@@ -71,7 +71,7 @@
 })();
 
 /* ============================================================
-   3. СВИТОК ПИСЬМА — РАЗВОРАЧИВАНИЕ ПО ТАПУ
+   3. СВИТОК ПИСЬМА — РАЗВОРАЧИВАНИЕ ПО ТАПУ + ПОБУКВЕННОЕ ПОЯВЛЕНИЕ
    ============================================================ */
 (function scrollLetter() {
     const p = document.getElementById('letterText');
@@ -80,56 +80,71 @@
     const toggleText = document.getElementById('scrollToggleText');
     if (!p || !scroll || !toggle) return;
 
-    const text = p.textContent;
+    // Сохраняем оригинальный текст и разбиваем его на буквы
+    const fullText = p.textContent;
     p.textContent = '';
-    const parts = text.split(/(?<=[.!?])\s+/);
-    let delay = 0.4;
+    p.setAttribute('aria-label', fullText);
 
-    parts.forEach((part, idx) => {
+    const charSpans = [];
+    for (let i = 0; i < fullText.length; i++) {
         const span = document.createElement('span');
-        span.className = 'reveal-line';
-        span.textContent = part + (idx < parts.length - 1 ? ' ' : '');
-        span.dataset.baseDelay = delay.toFixed(2);
-        span.style.animationDelay = '9999s';
+        span.className = 'char';
+        span.textContent = fullText[i];
         p.appendChild(span);
-        delay += 0.35;
-    });
+        charSpans.push(span);
+    }
 
-    const lines = p.querySelectorAll('.reveal-line');
     let isOpen = false;
-    let hasBeenOpened = false;
+    let revealTimer = null;
+    let revealIndex = 0;
 
-    function playReveal() {
-        lines.forEach((span) => {
-            span.style.animation = 'none';
-            void span.offsetWidth;
-            span.style.animation = '';
-            span.style.animationDelay = span.dataset.baseDelay + 's';
-        });
+    // Скорость появления: 1 буква примерно каждые 18 мс
+    const CHAR_INTERVAL_MS = 18;
+
+    function startReveal() {
+        clearInterval(revealTimer);
+        revealIndex = 0;
+        charSpans.forEach(s => s.classList.remove('shown'));
+
+        // Небольшая задержка, чтобы свиток успел раскрыться
+        setTimeout(() => {
+            revealTimer = setInterval(() => {
+                if (revealIndex >= charSpans.length) {
+                    clearInterval(revealTimer);
+                    return;
+                }
+                const span = charSpans[revealIndex];
+                span.classList.add('shown');
+                revealIndex++;
+            }, CHAR_INTERVAL_MS);
+        }, 500);
+    }
+
+    function hideAll() {
+        clearInterval(revealTimer);
+        charSpans.forEach(s => s.classList.remove('shown'));
+        revealIndex = 0;
     }
 
     function open() {
         scroll.classList.add('open');
         toggleText.textContent = 'Свернуть письмо';
-        setTimeout(playReveal, 350);
+        isOpen = true;
+        startReveal();
+
         setTimeout(() => {
             const rect = scroll.getBoundingClientRect();
             if (rect.top < 0 || rect.top > window.innerHeight * 0.4) {
                 scroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }, 100);
-        isOpen = true;
-        hasBeenOpened = true;
     }
 
     function close() {
         scroll.classList.remove('open');
         toggleText.textContent = 'Развернуть письмо';
-        lines.forEach((span) => {
-            span.style.animation = 'none';
-            span.style.animationDelay = '9999s';
-        });
         isOpen = false;
+        hideAll();
     }
 
     toggle.addEventListener('click', () => {
@@ -137,15 +152,7 @@
         else open();
     });
 
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && !hasBeenOpened) {
-                setTimeout(open, 250);
-                observer.disconnect();
-            }
-        });
-    }, { threshold: 0.3 });
-    observer.observe(scroll);
+    // НИКАКОГО автооткрытия — только по тапу пользователя
 })();
 
 /* ============================================================
@@ -281,6 +288,7 @@
     const MAX_ACTIVE = 600;
     let activeCount = 0;
 
+    // ---- ГИРОСКОП ----
     const gravity = { x: 0, y: 0 };
     let gyroEnabled = false;
 
@@ -289,30 +297,40 @@
     const needsPermission = typeof DeviceOrientationEvent !== 'undefined'
         && typeof DeviceOrientationEvent.requestPermission === 'function';
 
-    if (!needsPermission && typeof DeviceOrientationEvent !== 'undefined') {
+    if (needsPermission && gyroBtn) {
+        gyroBtn.hidden = false;
+        gyroBtn.addEventListener('click', async () => {
+            try {
+                const state = await DeviceOrientationEvent.requestPermission();
+                if (state === 'granted') {
+                    attachGyroListener();
+                    gyroBtn.textContent = '✨ Гироскоп включён';
+                    setTimeout(() => { gyroBtn.hidden = true; }, 1200);
+                } else {
+                    gyroBtn.textContent = '🎈 Разрешение отклонено';
+                    setTimeout(() => { gyroBtn.hidden = true; }, 2000);
+                }
+            } catch (e) {
+                console.warn('gyro error', e);
+                gyroBtn.hidden = true;
+            }
+        });
+    } else if (!needsPermission && typeof DeviceOrientationEvent !== 'undefined') {
         attachGyroListener();
     }
 
-    async function requestGyroPermissionOnce() {
-        if (!needsPermission) return true;
+    async function ensureGyro() {
         if (gyroEnabled) return true;
+        if (!needsPermission) return true;
         try {
             const state = await DeviceOrientationEvent.requestPermission();
             if (state === 'granted') {
                 attachGyroListener();
                 if (gyroBtn) gyroBtn.hidden = true;
                 return true;
-            } else {
-                if (gyroBtn) {
-                    gyroBtn.textContent = '🎈 Разрешение отклонено';
-                    setTimeout(() => { gyroBtn.hidden = true; }, 2000);
-                }
-                return false;
             }
-        } catch (e) {
-            console.warn('gyro permission error', e);
-            return false;
-        }
+        } catch (e) {}
+        return false;
     }
 
     function attachGyroListener() {
@@ -327,6 +345,7 @@
         }, true);
     }
 
+    // ---- ЛОГИКА НАЖАТИЙ ----
     let holdTimer = null;
     let isHolding = false;
     let holdInterval = null;
@@ -337,7 +356,7 @@
         longPressTriggered = false;
         isHolding = false;
 
-        requestGyroPermissionOnce();
+        ensureGyro();
 
         holdTimer = setTimeout(() => {
             isHolding = true;
@@ -371,6 +390,7 @@
         if (isHolding) onPointerUp();
     });
 
+    // ---- ВСПЛЕСКИ ----
     function spawnBurst(x, y) {
         for (let i = 0; i < PER_BURST; i++) {
             if (activeCount >= MAX_ACTIVE) return;
@@ -393,6 +413,7 @@
         }
     }
 
+    // ---- ФИЗИКА ----
     function createHeart(x, y, scaleMul = 1, isMega = false) {
         const heart = document.createElement('span');
         heart.className = 'confetti-heart ' +
@@ -414,6 +435,7 @@
         const startOffsetX = (Math.random() - 0.5) * 30;
         const startOffsetY = (Math.random() - 0.5) * 16;
 
+        // Разлёт веером ВВЕРХ: угол от -75° до -105°, высоко.
         const angle = -(Math.PI / 2) + (Math.random() - 0.5) * (Math.PI * 0.55);
         const speed = 320 + Math.random() * 320;
         let vx = Math.cos(angle) * speed;
@@ -423,17 +445,17 @@
         let py = startOffsetY;
 
         const rotStart = (Math.random() - 0.5) * 60;
-        const rotSpeed = (Math.random() - 0.5) * 240;
+        const rotSpeed = (Math.random() - 0.5) * 220;
         let rot = rotStart;
 
         const BASE_GRAV   = 900;
-        const GYRO_GRAV_X = 2600;
-        const GYRO_GRAV_Y = 1400;
+        const GYRO_GRAV_X = 2200;
+        const GYRO_GRAV_Y = 1100;
         const DRAG = 0.99;
 
         const startTime = performance.now();
         let lastTime = startTime;
-        const lifeMs = 3600 + Math.random() * 1400;
+        const lifeMs = 3200 + Math.random() * 1200;
 
         function frame(now) {
             const dt = Math.min(40, now - lastTime) / 1000;
@@ -465,10 +487,10 @@
                 `translate(${px}px, ${py}px) rotate(${rot}deg) scale(${scale})`;
             heart.style.opacity = opacity;
 
-            const bottomLimit  = window.innerHeight + 200;
-            const topLimit     = -200;
-            const rightLimit   = window.innerWidth  + 240;
-            const leftLimit    = -240;
+            const bottomLimit = window.innerHeight + 200;
+            const topLimit    = -200;
+            const rightLimit  = window.innerWidth  + 240;
+            const leftLimit   = -240;
 
             if (elapsed >= lifeMs ||
                 py > bottomLimit || py < topLimit ||
