@@ -21,9 +21,9 @@
     --shadow-1: rgba(232, 107, 160, 0.22);
     --shadow-2: rgba(232, 107, 160, 0.12);
     --paw-color: rgba(255, 158, 196, 0.12);
-    --heart-color: #ff8fb8;
-    --heart-color-2: #ffb6ce;
-    --heart-color-3: #ffd0e2;
+    --heart-color: #ff5c9e;
+    --heart-color-2: #ff7fb0;
+    --heart-color-3: #ffa8c8;
     --btn-bg: #ff9ec4;
     --btn-text: #ffffff;
     --toggle-bg: rgba(255, 255, 255, 0.85);
@@ -47,9 +47,9 @@ body.dark {
     --shadow-1: rgba(0, 0, 0, 0.4);
     --shadow-2: rgba(0, 0, 0, 0.25);
     --paw-color: rgba(255, 158, 196, 0.08);
-    --heart-color: #ff8fb8;
-    --heart-color-2: #ffb6ce;
-    --heart-color-3: #ffd0e2;
+    --heart-color: #ff6aa8;
+    --heart-color-2: #ff8bbc;
+    --heart-color-3: #ffb0ce;
     --btn-bg: #ff9ec4;
     --btn-text: #2a1a22;
     --toggle-bg: rgba(58, 34, 48, 0.85);
@@ -102,7 +102,6 @@ body::before {
     pointer-events: none;
 }
 
-/* нить */
 .garland::before {
     content: "";
     position: absolute;
@@ -118,7 +117,6 @@ body::before {
     border-radius: 2px;
 }
 
-/* рисованные сердечки через clip-path */
 .garland .h {
     position: absolute;
     top: 4px;
@@ -152,7 +150,7 @@ body::before {
     z-index: 2;
     overflow: hidden;
     opacity: 1;
-    transition: opacity 1.2s ease;
+    transition: opacity 1.8s ease;
 }
 
 .rain.fade-out {
@@ -166,9 +164,9 @@ body::before {
     height: 18px;
     background: var(--heart-color);
     clip-path: path("M9 16 C9 16 0 10 0 5 C0 2 2 0 4 0 C6 0 8 1.5 9 3 C10 1.5 12 0 14 0 C16 0 18 2 18 5 C18 10 9 16 9 16 Z");
-    opacity: 0.75;
+    opacity: 0.95;
     animation: fall linear infinite;
-    filter: drop-shadow(0 2px 3px rgba(232, 107, 160, 0.25));
+    filter: drop-shadow(0 2px 4px rgba(232, 107, 160, 0.4));
 }
 
 .rain .drop.c2 { background: var(--heart-color-2); }
@@ -179,8 +177,8 @@ body::before {
         transform: translateY(0) rotate(0deg);
         opacity: 0;
     }
-    10% { opacity: 0.75; }
-    90% { opacity: 0.75; }
+    8% { opacity: 0.95; }
+    92% { opacity: 0.95; }
     100% {
         transform: translateY(110vh) rotate(360deg);
         opacity: 0;
@@ -327,7 +325,6 @@ h1 {
     transition: color 0.5s ease;
 }
 
-/* появление текста по абзацам/строкам */
 .letter p .reveal-line {
     display: inline;
     opacity: 0;
