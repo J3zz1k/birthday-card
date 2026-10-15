@@ -448,22 +448,30 @@
         const rotSpeed = (Math.random() - 0.5) * 220;
         let rot = rotStart;
 
+        // Базовая гравитация тянет вниз мягко.
+        // При наклоне ОТ СЕБЯ (beta уменьшается) — сильная тяга вверх.
         const BASE_GRAV   = 900;
         const GYRO_GRAV_X = 2200;
-        const GYRO_GRAV_Y = 1100;
+        const GYRO_GRAV_Y = 1600;   // усилил, чтобы уносило выше
         const DRAG = 0.99;
 
         const startTime = performance.now();
         let lastTime = startTime;
-        const lifeMs = 3200 + Math.random() * 1200;
+        const lifeMs = 3600 + Math.random() * 1400;
 
         function frame(now) {
             const dt = Math.min(40, now - lastTime) / 1000;
             lastTime = now;
             const elapsed = now - startTime;
 
+            // Если телефон наклонён от себя (gravity.y < 0) —
+            // добавляем «попутный» импульс вверх, чтобы сердечки
+            // реально доходили до верха и уходили за экран.
+            const tiltForward = Math.max(0, -gravity.y);
+            const extraUp = tiltForward * 1200;
+
             const ax = gravity.x * GYRO_GRAV_X;
-            const ay = BASE_GRAV + gravity.y * GYRO_GRAV_Y;
+            const ay = BASE_GRAV + gravity.y * GYRO_GRAV_Y - extraUp;
 
             vx += ax * dt;
             vy += ay * dt;
@@ -487,13 +495,14 @@
                 `translate(${px}px, ${py}px) rotate(${rot}deg) scale(${scale})`;
             heart.style.opacity = opacity;
 
-            const bottomLimit = window.innerHeight + 200;
-            const topLimit    = -200;
-            const rightLimit  = window.innerWidth  + 240;
-            const leftLimit   = -240;
+            // ВЕРХНЮЮ границу убрали — сердечки уходят за верх экрана свободно.
+            // Оставляем только: низ, лево, право + общий таймаут жизни.
+            const bottomLimit = window.innerHeight + 300;
+            const rightLimit  = window.innerWidth  + 300;
+            const leftLimit   = -300;
 
             if (elapsed >= lifeMs ||
-                py > bottomLimit || py < topLimit ||
+                py > bottomLimit ||
                 px > rightLimit  || px < leftLimit) {
                 heart.remove();
                 activeCount--;
