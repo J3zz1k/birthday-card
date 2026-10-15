@@ -71,38 +71,81 @@
 })();
 
 /* ============================================================
-   3. РАЗВОРАЧИВАНИЕ ПИСЬМА + ПОСТРОЧНОЕ ПОЯВЛЕНИЕ
+   3. СВИТОК ПИСЬМА — РАЗВОРАЧИВАНИЕ ПО ТАПУ
    ============================================================ */
-(function revealLetter() {
+(function scrollLetter() {
     const p = document.getElementById('letterText');
-    const letter = document.getElementById('letter');
-    if (!p || !letter) return;
+    const scroll = document.getElementById('scroll');
+    const toggle = document.getElementById('scrollToggle');
+    const toggleText = document.getElementById('scrollToggleText');
+    if (!p || !scroll || !toggle) return;
 
     const text = p.textContent;
     p.textContent = '';
-
     const parts = text.split(/(?<=[.!?])\s+/);
-    let delay = 0.6;
+    let delay = 0.4;
 
     parts.forEach((part, idx) => {
         const span = document.createElement('span');
         span.className = 'reveal-line';
         span.textContent = part + (idx < parts.length - 1 ? ' ' : '');
-        span.style.animationDelay = delay + 's';
+        span.dataset.baseDelay = delay.toFixed(2);
+        span.style.animationDelay = '9999s';
         p.appendChild(span);
         delay += 0.35;
     });
 
+    const lines = p.querySelectorAll('.reveal-line');
+    let isOpen = false;
+    let hasBeenOpened = false;
+
+    function playReveal() {
+        lines.forEach((span) => {
+            span.style.animation = 'none';
+            void span.offsetWidth;
+            span.style.animation = '';
+            span.style.animationDelay = span.dataset.baseDelay + 's';
+        });
+    }
+
+    function open() {
+        scroll.classList.add('open');
+        toggleText.textContent = 'Свернуть письмо';
+        setTimeout(playReveal, 350);
+        setTimeout(() => {
+            const rect = scroll.getBoundingClientRect();
+            if (rect.top < 0 || rect.top > window.innerHeight * 0.4) {
+                scroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+        isOpen = true;
+        hasBeenOpened = true;
+    }
+
+    function close() {
+        scroll.classList.remove('open');
+        toggleText.textContent = 'Развернуть письмо';
+        lines.forEach((span) => {
+            span.style.animation = 'none';
+            span.style.animationDelay = '9999s';
+        });
+        isOpen = false;
+    }
+
+    toggle.addEventListener('click', () => {
+        if (isOpen) close();
+        else open();
+    });
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                letter.classList.add('unroll');
+            if (entry.isIntersecting && !hasBeenOpened) {
+                setTimeout(open, 250);
                 observer.disconnect();
             }
         });
-    }, { threshold: 0.15 });
-
-    observer.observe(letter);
+    }, { threshold: 0.3 });
+    observer.observe(scroll);
 })();
 
 /* ============================================================
@@ -238,20 +281,14 @@
     const MAX_ACTIVE = 600;
     let activeCount = 0;
 
-    // ============ ГИРОСКОП ============
-    // gravity.x: -1 (влево) ... +1 (вправо)
-    // gravity.y: -1 (вверх ногами) ... +1 (вниз)
     const gravity = { x: 0, y: 0 };
     let gyroEnabled = false;
 
     const gyroBtn = document.getElementById('gyroBtn');
 
-    // На iPhone нужно запросить разрешение ИМЕННО в обработчике тапа.
-    // Поэтому запрос делаем при первом нажатии на кнопку "Сердечки".
     const needsPermission = typeof DeviceOrientationEvent !== 'undefined'
         && typeof DeviceOrientationEvent.requestPermission === 'function';
 
-    // Если это Android — просто включаем сразу
     if (!needsPermission && typeof DeviceOrientationEvent !== 'undefined') {
         attachGyroListener();
     }
@@ -259,7 +296,6 @@
     async function requestGyroPermissionOnce() {
         if (!needsPermission) return true;
         if (gyroEnabled) return true;
-
         try {
             const state = await DeviceOrientationEvent.requestPermission();
             if (state === 'granted') {
@@ -282,33 +318,25 @@
     function attachGyroListener() {
         gyroEnabled = true;
         window.addEventListener('deviceorientation', (e) => {
-            // gamma: -90..+90 — наклон влево/вправо
-            // beta:  -180..+180 — наклон вперёд/назад
-            let gx = (e.gamma || 0) / 45;
-            let gy = ((e.beta || 0) - 45) / 45;
-
-            // Ограничиваем -1..+1
+            let gx = (e.gamma || 0) / 30;
+            let gy = ((e.beta || 0) - 45) / 30;
             gx = Math.max(-1, Math.min(1, gx));
             gy = Math.max(-1, Math.min(1, gy));
-
-            // Плавное сглаживание, чтобы не дёргалось
-            gravity.x = gravity.x * 0.85 + gx * 0.15;
-            gravity.y = gravity.y * 0.85 + gy * 0.15;
+            gravity.x = gravity.x * 0.8 + gx * 0.2;
+            gravity.y = gravity.y * 0.8 + gy * 0.2;
         }, true);
     }
 
-    // ============ ЛОГИКА НАЖАТИЙ ============
     let holdTimer = null;
     let isHolding = false;
     let holdInterval = null;
     let longPressTriggered = false;
     const HOLD_MS = 600;
 
-    function onPointerDown(e) {
+    function onPointerDown() {
         longPressTriggered = false;
         isHolding = false;
 
-        // Запрашиваем разрешение гироскопа при первом же взаимодействии
         requestGyroPermissionOnce();
 
         holdTimer = setTimeout(() => {
@@ -343,7 +371,6 @@
         if (isHolding) onPointerUp();
     });
 
-    // ============ ВСПЛЕСКИ ============
     function spawnBurst(x, y) {
         for (let i = 0; i < PER_BURST; i++) {
             if (activeCount >= MAX_ACTIVE) return;
@@ -366,10 +393,6 @@
         }
     }
 
-    /* ========================================================
-       ФИЗИКА ЧАСТИЦЫ ЧЕРЕЗ requestAnimationFrame
-       (гравитация от гироскопа действует ВСЁ время полёта)
-       ======================================================== */
     function createHeart(x, y, scaleMul = 1, isMega = false) {
         const heart = document.createElement('span');
         heart.className = 'confetti-heart ' +
@@ -388,7 +411,6 @@
         layer.appendChild(heart);
         activeCount++;
 
-        // --- начальные параметры частицы ---
         const startOffsetX = (Math.random() - 0.5) * 30;
         const startOffsetY = (Math.random() - 0.5) * 16;
 
@@ -397,38 +419,33 @@
         let vx = Math.cos(angle) * speed;
         let vy = Math.sin(angle) * speed;
 
-        // позиция относительно старта
         let px = startOffsetX;
         let py = startOffsetY;
 
         const rotStart = (Math.random() - 0.5) * 60;
-        const rotSpeed = (Math.random() - 0.5) * 240; // градусов в сек
+        const rotSpeed = (Math.random() - 0.5) * 240;
         let rot = rotStart;
 
-        // физика
-        const GRAV = 900;        // базовая гравитация вниз, px/s^2
-        const DRAG = 0.985;      // сопротивление воздуха (за кадр)
-        const GYRO_FORCE = 900;  // насколько сильно гироскоп тянет в сторону
+        const BASE_GRAV   = 900;
+        const GYRO_GRAV_X = 2600;
+        const GYRO_GRAV_Y = 1400;
+        const DRAG = 0.99;
 
         const startTime = performance.now();
         let lastTime = startTime;
-
-        // длительность жизни — 3.2..4.4 сек
-        const lifeMs = 3200 + Math.random() * 1200;
+        const lifeMs = 3600 + Math.random() * 1400;
 
         function frame(now) {
             const dt = Math.min(40, now - lastTime) / 1000;
             lastTime = now;
             const elapsed = now - startTime;
 
-            // гравитация: всегда вниз + тяга от наклона телефона
-            const ax = gravity.x * GYRO_FORCE;
-            const ay = GRAV + gravity.y * GYRO_FORCE * 0.6;
+            const ax = gravity.x * GYRO_GRAV_X;
+            const ay = BASE_GRAV + gravity.y * GYRO_GRAV_Y;
 
             vx += ax * dt;
             vy += ay * dt;
 
-            // сопротивление
             vx *= DRAG;
             vy *= DRAG;
 
@@ -437,29 +454,25 @@
 
             rot += rotSpeed * dt;
 
-            // масштаб чуть уменьшается к концу
             const lifeRatio = elapsed / lifeMs;
             const scale = 1 - lifeRatio * 0.15;
 
-            // прозрачность — плавно гаснет в последнюю треть
             let opacity = 1;
-            if (lifeRatio > 0.66) {
-                opacity = 1 - (lifeRatio - 0.66) / 0.34;
-            }
-            if (lifeRatio < 0.06) {
-                opacity = lifeRatio / 0.06;
-            }
+            if (lifeRatio > 0.7)  opacity = 1 - (lifeRatio - 0.7) / 0.3;
+            if (lifeRatio < 0.05) opacity = lifeRatio / 0.05;
 
             heart.style.transform =
                 `translate(${px}px, ${py}px) rotate(${rot}deg) scale(${scale})`;
             heart.style.opacity = opacity;
 
-            // условие завершения
-            const screenBottom = window.innerHeight + 80;
-            const screenRight = window.innerWidth + 120;
-            const screenLeft = -120;
+            const bottomLimit  = window.innerHeight + 200;
+            const topLimit     = -200;
+            const rightLimit   = window.innerWidth  + 240;
+            const leftLimit    = -240;
 
-            if (elapsed >= lifeMs || py > screenBottom || px > screenRight || px < screenLeft) {
+            if (elapsed >= lifeMs ||
+                py > bottomLimit || py < topLimit ||
+                px > rightLimit  || px < leftLimit) {
                 heart.remove();
                 activeCount--;
                 return;
