@@ -2,18 +2,23 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>С днём рождения, кися моя 🐱💕</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
     <div class="rain" id="rain" aria-hidden="true"></div>
     <div class="garland" aria-hidden="true"></div>
     <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="paw-trail" id="pawTrail" aria-hidden="true"></div>
+
+    <!-- Кнопка запроса разрешения на гироскоп (iPhone) -->
+    <button class="gyro-btn" id="gyroBtn" hidden>🎈 Разрешить волшебство</button>
 
     <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
         <span class="icon-sun">☀️</span>
         <span class="icon-moon">🌙</span>
+        <span class="theme-fx" id="themeFx" aria-hidden="true"></span>
     </button>
 
     <main class="card" id="card">
@@ -22,6 +27,10 @@
         <h1>С днём рождения,<br>кися моя 💗</h1>
 
         <div class="date-badge">14.10</div>
+
+        <div class="together-counter" id="togetherCounter" aria-live="polite">
+            вместе уже: <span id="daysCount">0</span> дн. <span id="hoursCount">0</span> ч. <span id="minsCount">0</span> мин.
+        </div>
 
         <div class="divider">
             <span>🐾</span><span>🐾</span><span>🐾</span>
@@ -42,9 +51,12 @@
             <span class="paw">🐾</span>
         </div>
 
-        <button class="hearts-btn" id="heartsBtn">💗 Сердечки</button>
+        <button class="hearts-btn" id="heartsBtn">
+            <span class="btn-heart">💗</span> Сердечки
+        </button>
+        <div class="hint">зажми кнопку — будет сюрприз</div>
     </main>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=10"></script>
 </body>
 </html>
