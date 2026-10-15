@@ -21,6 +21,7 @@
     --shadow-1: rgba(232, 107, 160, 0.22);
     --shadow-2: rgba(232, 107, 160, 0.12);
     --paw-color: rgba(255, 158, 196, 0.12);
+    --paw-print: rgba(230, 0, 60, 0.35);
     --heart-color: #e6003c;
     --heart-color-2: #ff1f5a;
     --heart-color-3: #c9002f;
@@ -28,6 +29,7 @@
     --btn-text: #ffffff;
     --toggle-bg: rgba(255, 255, 255, 0.85);
     --toggle-border: #ffd0e2;
+    --transition-theme: 0.7s;
 }
 
 /* Тёмная тема */
@@ -47,6 +49,7 @@ body.dark {
     --shadow-1: rgba(0, 0, 0, 0.4);
     --shadow-2: rgba(0, 0, 0, 0.25);
     --paw-color: rgba(255, 158, 196, 0.08);
+    --paw-print: rgba(255, 92, 158, 0.45);
     --heart-color: #ff2a5a;
     --heart-color-2: #ff4d76;
     --heart-color-3: #e6003c;
@@ -71,7 +74,9 @@ body {
     position: relative;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
-    transition: background 0.5s ease, color 0.5s ease;
+    transition:
+        background var(--transition-theme) ease,
+        color var(--transition-theme) ease;
 }
 
 body::before {
@@ -87,7 +92,7 @@ body::before {
     pointer-events: none;
     z-index: 0;
     word-spacing: 40px;
-    transition: color 0.5s ease;
+    transition: color var(--transition-theme) ease;
 }
 
 /* ---------- ГИРЛЯНДА ---------- */
@@ -156,6 +161,36 @@ body::before {
 .garland .h:nth-child(3n) { animation-duration: 2.6s; animation-delay: 0.5s;  }
 .garland .h:nth-child(4n) { animation-duration: 4s;   animation-delay: 0.15s; }
 .garland .h:nth-child(5n) { animation-duration: 3.2s; animation-delay: 0.7s;  }
+
+/* сердечко с датой */
+.garland .h.dated {
+    width: 30px;
+    height: 28px;
+    z-index: 2;
+}
+.garland .h.dated::before,
+.garland .h.dated::after {
+    width: 15px;
+    height: 22px;
+    border-radius: 15px 15px 0 0;
+}
+.garland .h.dated::before { left: 15px; }
+.garland .h.dated::after  { left: 0; }
+
+.garland .h .date-label {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    transform: translate(-50%, -50%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 8px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.2px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    white-space: nowrap;
+}
 
 @keyframes garlandSwing {
     0%, 100% { transform: rotate(-10deg) translateY(0); }
@@ -260,6 +295,50 @@ body::before {
 .confetti-heart.c3::before,
 .confetti-heart.c3::after { background: var(--heart-color-3); }
 
+/* ---------- СЛЕДЫ КОТА ---------- */
+.paw-trail {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    overflow: hidden;
+}
+
+.paw-print {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.5) rotate(var(--rot, 0deg));
+    animation: pawAppear 2.2s ease-out forwards;
+}
+
+/* отпечаток: подушечка + 4 пальчика */
+.paw-print::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    width: 16px;
+    height: 13px;
+    background: var(--paw-print);
+    border-radius: 50% 50% 45% 45%;
+    transform: translate(-50%, -50%);
+    box-shadow:
+        -9px -8px 0 -2px var(--paw-print),
+        -3px -12px 0 -2px var(--paw-print),
+         3px -12px 0 -2px var(--paw-print),
+         9px -8px 0 -2px var(--paw-print);
+}
+
+@keyframes pawAppear {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(var(--rot, 0deg)); }
+    15%  { opacity: 0.9; transform: translate(-50%, -50%) scale(1) rotate(var(--rot, 0deg)); }
+    70%  { opacity: 0.5; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.05) rotate(var(--rot, 0deg)); }
+}
+
 /* ---------- ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ---------- */
 .theme-toggle {
     position: fixed;
@@ -272,26 +351,75 @@ body::before {
     border: 1px solid var(--toggle-border);
     background: var(--toggle-bg);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 20px;
     box-shadow: 0 4px 12px var(--shadow-2);
-    transition: transform 0.25s ease, background 0.4s ease, border-color 0.4s ease;
+    transition: transform 0.25s ease, background var(--transition-theme) ease, border-color var(--transition-theme) ease;
     -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
 }
 .theme-toggle:active { transform: scale(0.92); }
 
 .theme-toggle .icon-sun,
 .theme-toggle .icon-moon {
     position: absolute;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 body:not(.dark) .icon-moon { opacity: 0; transform: rotate(-90deg); }
 body:not(.dark) .icon-sun  { opacity: 1; transform: rotate(0deg); }
 body.dark .icon-sun  { opacity: 0; transform: rotate(90deg); }
 body.dark .icon-moon { opacity: 1; transform: rotate(0deg); }
+
+/* всплывающий символ при переключении (луна / солнышко) */
+.theme-fx {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    opacity: 0;
+    pointer-events: none;
+}
+.theme-fx.play {
+    animation: themeFx 1s ease-out;
+}
+@keyframes themeFx {
+    0%   { opacity: 0; transform: scale(0.5) translateY(0); }
+    30%  { opacity: 1; transform: scale(1.1) translateY(-4px); }
+    70%  { opacity: 1; transform: scale(1)   translateY(-6px); }
+    100% { opacity: 0; transform: scale(1.2) translateY(-14px); }
+}
+
+/* ---------- КНОПКА "ВОЛШЕБСТВО" (гироскоп) ---------- */
+.gyro-btn {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 14px;
+    z-index: 120;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff1f5a 0%, #c9002f 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(230, 0, 60, 0.45);
+    -webkit-tap-highlight-color: transparent;
+    animation: gyroPulse 2s ease-in-out infinite;
+}
+.gyro-btn:active { transform: translateX(-50%) scale(0.95); }
+@keyframes gyroPulse {
+    0%, 100% { box-shadow: 0 6px 18px rgba(230, 0, 60, 0.45); }
+    50%      { box-shadow: 0 6px 26px rgba(230, 0, 60, 0.75); }
+}
 
 /* ---------- КАРТОЧКА ---------- */
 .card {
@@ -307,8 +435,9 @@ body.dark .icon-moon { opacity: 1; transform: rotate(0deg); }
         0 4px 14px var(--shadow-2),
         inset 0 0 0 1px rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     animation: cardIn 1s ease-out both;
-    transition: background 0.5s ease, box-shadow 0.5s ease;
+    transition: background var(--transition-theme) ease, box-shadow var(--transition-theme) ease;
 }
 
 @keyframes cardIn {
@@ -337,7 +466,7 @@ h1 {
     line-height: 1.25;
     letter-spacing: 0.3px;
     text-shadow: 0 2px 10px rgba(255, 158, 196, 0.35);
-    transition: color 0.5s ease;
+    transition: color var(--transition-theme) ease;
 }
 
 .date-badge {
@@ -352,13 +481,30 @@ h1 {
     font-weight: 700;
     letter-spacing: 2px;
     text-align: center;
-    transition: background 0.5s ease, border-color 0.5s ease, color 0.5s ease;
+    transition: background var(--transition-theme) ease, border-color var(--transition-theme) ease, color var(--transition-theme) ease;
 }
 .card > .date-badge {
     display: block;
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
+}
+
+/* счётчик вместе */
+.together-counter {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 13px;
+    letter-spacing: 0.4px;
+    color: var(--pink-deep);
+    opacity: 0.85;
+    font-style: italic;
+    transition: color var(--transition-theme) ease;
+}
+.together-counter span {
+    font-weight: 700;
+    font-style: normal;
+    color: var(--heart-color);
 }
 
 .divider {
@@ -376,13 +522,36 @@ h1 {
     50%      { opacity: 0.95; transform: scale(1.08); }
 }
 
+/* ---------- ПИСЬМО: СВИТОК ---------- */
 .letter {
+    position: relative;
     background: linear-gradient(180deg, var(--letter-bg-1) 0%, var(--letter-bg-2) 100%);
     border: 1px solid var(--pink-light);
     border-radius: 20px;
     padding: 22px 20px;
     box-shadow: inset 0 2px 10px rgba(255, 158, 196, 0.12);
-    transition: background 0.5s ease, border-color 0.5s ease;
+    transition: background var(--transition-theme) ease, border-color var(--transition-theme) ease;
+}
+
+/* Эффект разворачивающегося свитка */
+.letter.unroll {
+    animation: unroll 1.4s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+    transform-origin: top center;
+}
+@keyframes unroll {
+    0% {
+        clip-path: inset(0 0 100% 0);
+        opacity: 0.5;
+        transform: scaleY(0.9);
+    }
+    60% {
+        opacity: 1;
+    }
+    100% {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+        transform: scaleY(1);
+    }
 }
 
 .letter p {
@@ -392,18 +561,28 @@ h1 {
     text-align: justify;
     hyphens: auto;
     word-break: break-word;
-    transition: color 0.5s ease;
+    transition: color var(--transition-theme) ease;
 }
 
 .letter p .reveal-line {
     display: inline;
     opacity: 0;
-    animation: revealLine 0.6s ease forwards;
+    filter: blur(4px);
+    transform: translateY(6px);
+    animation: revealLine 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
 }
 
 @keyframes revealLine {
-    from { opacity: 0; filter: blur(3px); }
-    to   { opacity: 1; filter: blur(0); }
+    0% {
+        opacity: 0;
+        filter: blur(4px);
+        transform: translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+    }
 }
 
 .final-love {
@@ -417,7 +596,7 @@ h1 {
     color: var(--pink-deep);
     text-align: center;
     animation: lovePulse 2s ease-in-out infinite;
-    transition: color 0.5s ease;
+    transition: color var(--transition-theme) ease;
 }
 
 .love-heart {
@@ -447,7 +626,7 @@ h1 {
     font-weight: 600;
     color: var(--pink-deep);
     letter-spacing: 0.5px;
-    transition: color 0.5s ease;
+    transition: color var(--transition-theme) ease;
 }
 
 .footer .paw {
@@ -479,10 +658,35 @@ h1 {
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     -webkit-user-select: none;
+    position: relative;
+    overflow: visible;
 }
 .hearts-btn:active {
     transform: scale(0.94);
     box-shadow: 0 4px 14px rgba(230, 0, 60, 0.5);
+}
+.hearts-btn .btn-heart {
+    display: inline-block;
+    margin-right: 6px;
+    animation: heartBeat 1.4s ease-in-out infinite;
+}
+
+/* Кнопка пульсирует, когда её долго держат */
+.hearts-btn.holding {
+    animation: btnHoldPulse 0.6s ease-in-out infinite;
+}
+@keyframes btnHoldPulse {
+    0%, 100% { transform: scale(1);     box-shadow: 0 8px 22px rgba(230, 0, 60, 0.45); }
+    50%      { transform: scale(1.06);  box-shadow: 0 10px 30px rgba(230, 0, 60, 0.75); }
+}
+
+.hint {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--pink-deep);
+    opacity: 0.6;
+    letter-spacing: 0.3px;
 }
 
 @media (max-width: 480px) {
@@ -490,11 +694,18 @@ h1 {
     .card { padding: 28px 16px 24px; border-radius: 24px; }
     .cat-emoji { font-size: 48px; }
     .garland .h { width: 16px; height: 16px; }
+    .garland .h.dated { width: 24px; height: 22px; }
+    .garland .h.dated::before,
+    .garland .h.dated::after { width: 12px; height: 18px; }
+    .garland .h.dated::before { left: 12px; }
+    .garland .h .date-label { font-size: 6px; }
     .theme-toggle { top: 60px; right: 10px; width: 40px; height: 40px; font-size: 18px; }
+    .gyro-btn { font-size: 12px; padding: 7px 13px; }
     .letter { padding: 18px 15px; }
     .letter p { text-align: left; line-height: 1.75; }
     .footer { font-size: 15px; }
     .hearts-btn { padding: 13px 24px; font-size: 15px; }
+    .paw-print { width: 30px; height: 30px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -502,5 +713,6 @@ h1 {
         animation: none !important;
         transition: none !important;
     }
-    .letter p .reveal-line { opacity: 1; }
+    .letter p .reveal-line { opacity: 1; filter: none; transform: none; }
+    .letter.unroll { clip-path: none; }
 }
