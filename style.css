@@ -372,6 +372,7 @@ body:not(.dark) .icon-sun  { opacity: 1; transform: rotate(0deg); }
 body.dark .icon-sun  { opacity: 0; transform: rotate(90deg); }
 body.dark .icon-moon { opacity: 1; transform: rotate(0deg); }
 
+/* Вспомогательный значок — теперь пульсирует на месте, не вылетает */
 .theme-fx {
     position: absolute;
     inset: 0;
@@ -381,15 +382,16 @@ body.dark .icon-moon { opacity: 1; transform: rotate(0deg); }
     font-size: 26px;
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .theme-fx.play {
-    animation: themeFx 1s ease-out;
+    animation: themeFx 0.9s ease-out;
 }
 @keyframes themeFx {
-    0%   { opacity: 0; transform: scale(0.5) translateY(0); }
-    30%  { opacity: 1; transform: scale(1.1) translateY(-4px); }
-    70%  { opacity: 1; transform: scale(1)   translateY(-6px); }
-    100% { opacity: 0; transform: scale(1.2) translateY(-14px); }
+    0%   { opacity: 0; transform: scale(0.7); }
+    25%  { opacity: 1; transform: scale(1.12); }
+    55%  { opacity: 1; transform: scale(1);    }
+    100% { opacity: 0; transform: scale(1);    }
 }
 
 /* ---------- КНОПКА "ВОЛШЕБСТВО" (гироскоп) ---------- */
