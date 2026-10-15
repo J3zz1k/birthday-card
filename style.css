@@ -162,7 +162,7 @@ body::before {
     50%      { transform: rotate(10deg)  translateY(3px); }
 }
 
-/* ---------- ПАДАЮЩИЕ СЕРДЕЧКИ (CSS-сердечки) ---------- */
+/* ---------- ПАДАЮЩИЕ СЕРДЕЧКИ ---------- */
 .rain {
     position: fixed;
     inset: 0;
@@ -210,24 +210,61 @@ body::before {
 .rain .drop.c3::after { background: var(--heart-color-3); }
 
 @keyframes fall {
-    0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 0;
-    }
-    8%  { opacity: 0.95; }
-    92% { opacity: 0.95; }
-    100% {
-        transform: translateY(110vh) rotate(360deg);
-        opacity: 0;
-    }
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+    8%   { opacity: 0.95; }
+    92%  { opacity: 0.95; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
 }
+
+/* ---------- КОНФЕТТИ ИЗ СЕРДЕЧЕК ---------- */
+.confetti-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    overflow: hidden;
+}
+
+.confetti-heart {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    will-change: transform, opacity;
+    pointer-events: none;
+}
+
+.confetti-heart::before,
+.confetti-heart::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 16px;
+    background: var(--heart-color);
+    border-radius: 10px 10px 0 0;
+    top: 0;
+}
+.confetti-heart::before {
+    left: 10px;
+    transform: rotate(-45deg);
+    transform-origin: 0 100%;
+}
+.confetti-heart::after {
+    left: 0;
+    transform: rotate(45deg);
+    transform-origin: 100% 100%;
+}
+
+.confetti-heart.c2::before,
+.confetti-heart.c2::after { background: var(--heart-color-2); }
+.confetti-heart.c3::before,
+.confetti-heart.c3::after { background: var(--heart-color-3); }
 
 /* ---------- ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ---------- */
 .theme-toggle {
     position: fixed;
     top: 70px;
     right: 16px;
-    z-index: 10;
+    z-index: 100;
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -423,24 +460,29 @@ h1 {
     50%      { transform: rotate(18deg); }
 }
 
-.save-btn {
+/* ---------- КНОПКА "СЕРДЕЧКИ" ---------- */
+.hearts-btn {
     display: block;
     margin: 26px auto 0;
-    padding: 12px 24px;
+    padding: 14px 28px;
     border: none;
     border-radius: 999px;
-    background: var(--btn-bg);
-    color: var(--btn-text);
-    font-size: 15px;
+    background: linear-gradient(135deg, #ff9ec4 0%, #ff5c9e 100%);
+    color: #ffffff;
+    font-size: 16px;
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    box-shadow: 0 6px 18px rgba(232, 107, 160, 0.35);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.4s ease, color 0.4s ease;
+    box-shadow: 0 8px 22px rgba(255, 92, 158, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
 }
-.save-btn:active { transform: scale(0.96); }
-.save-btn:disabled { opacity: 0.7; cursor: wait; }
+.hearts-btn:active {
+    transform: scale(0.94);
+    box-shadow: 0 4px 14px rgba(255, 92, 158, 0.5);
+}
 
 @media (max-width: 480px) {
     body { padding: 74px 10px 44px; }
@@ -451,6 +493,7 @@ h1 {
     .letter { padding: 18px 15px; }
     .letter p { text-align: left; line-height: 1.75; }
     .footer { font-size: 15px; }
+    .hearts-btn { padding: 13px 24px; font-size: 15px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
