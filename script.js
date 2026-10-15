@@ -72,15 +72,17 @@
 
 /* ============================================================
    3. СВИТОК ПИСЬМА — РАЗВОРАЧИВАНИЕ ПО ТАПУ + ПОБУКВЕННОЕ ПОЯВЛЕНИЕ
+   Синхронизация: сколько текста видно — настолько раскрыт свиток
    ============================================================ */
 (function scrollLetter() {
     const p = document.getElementById('letterText');
     const scroll = document.getElementById('scroll');
+    const scrollBody = document.getElementById('scrollBody');
     const toggle = document.getElementById('scrollToggle');
     const toggleText = document.getElementById('scrollToggleText');
-    if (!p || !scroll || !toggle) return;
+    if (!p || !scroll || !scrollBody || !toggle) return;
 
-    // Сохраняем оригинальный текст и разбиваем его на буквы
+    // --- 1. Сохраняем текст и разбиваем на буквы ---
     const fullText = p.textContent;
     p.textContent = '';
     p.setAttribute('aria-label', fullText);
@@ -94,36 +96,117 @@
         charSpans.push(span);
     }
 
+    // --- 2. Измеряем полную высоту текста ---
+    function measureFullHeight() {
+        charSpans.forEach(s => s.classList.add('shown'));
+        scrollBody.style.maxHeight = 'none';
+        const h = scrollBody.scrollHeight;
+        scrollBody.style.maxHeight = '';
+        charSpans.forEach(s => s.classList.remove('shown'));
+        return h;
+    }
+
+    let fullHeight = 0;
+    const COLLAPSED_HEIGHT = 60;
+
+    function initMeasure() {
+        fullHeight = measureFullHeight();
+        scrollBody.style.maxHeight = COLLAPSED_HEIGHT + 'px';
+    }
+
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(initMeasure);
+    } else {
+        window.addEventListener('load', initMeasure);
+        setTimeout(initMeasure, 300);
+    }
+
+    // --- 3. Побуквенное появление + плавное раскрытие свитка ---
     let isOpen = false;
     let revealTimer = null;
     let revealIndex = 0;
+    let rafId = null;
 
-    // Скорость появления: 1 буква примерно каждые 18 мс
-    const CHAR_INTERVAL_MS = 18;
+    const CHAR_INTERVAL_MS = 22;
+    const REVEAL_START_DELAY = 400;
+
+    function smoothExpandTo(targetHeight) {
+        cancelAnimationFrame(rafId);
+        const startHeight = parseFloat(scrollBody.style.maxHeight) || COLLAPSED_HEIGHT;
+        const startTime = performance.now();
+        const duration = 220;
+
+        function step(now) {
+            const t = Math.min(1, (now - startTime) / duration);
+            const eased = 1 - Math.pow(1 - t, 3);
+            const h = startHeight + (targetHeight - startHeight) * eased;
+            scrollBody.style.maxHeight = h + 'px';
+            if (t < 1) {
+                rafId = requestAnimationFrame(step);
+            }
+        }
+        rafId = requestAnimationFrame(step);
+    }
+
+    function smoothCollapseTo(targetHeight) {
+        cancelAnimationFrame(rafId);
+        const startHeight = parseFloat(scrollBody.style.maxHeight) || COLLAPSED_HEIGHT;
+        const startTime = performance.now();
+        const duration = 500;
+
+        function step(now) {
+            const t = Math.min(1, (now - startTime) / duration);
+            const eased = 1 - Math.pow(1 - t, 3);
+            const h = startHeight + (targetHeight - startHeight) * eased;
+            scrollBody.style.maxHeight = h + 'px';
+            if (t < 1) {
+                rafId = requestAnimationFrame(step);
+            }
+        }
+        rafId = requestAnimationFrame(step);
+    }
 
     function startReveal() {
         clearInterval(revealTimer);
+        cancelAnimationFrame(rafId);
         revealIndex = 0;
-        charSpans.forEach(s => s.classList.remove('shown'));
 
-        // Небольшая задержка, чтобы свиток успел раскрыться
+        charSpans.forEach(s => s.classList.remove('shown'));
+        scrollBody.style.maxHeight = COLLAPSED_HEIGHT + 'px';
+
+        if (!fullHeight) {
+            fullHeight = measureFullHeight();
+        }
+
         setTimeout(() => {
             revealTimer = setInterval(() => {
                 if (revealIndex >= charSpans.length) {
                     clearInterval(revealTimer);
+                    smoothExpandTo(fullHeight + 40);
                     return;
                 }
+
                 const span = charSpans[revealIndex];
                 span.classList.add('shown');
                 revealIndex++;
+
+                // каждые 3 буквы — плавно тянем свиток
+                if (revealIndex % 3 === 0 || revealIndex === charSpans.length) {
+                    const progress = revealIndex / charSpans.length;
+                    const target = COLLAPSED_HEIGHT +
+                        (fullHeight - COLLAPSED_HEIGHT) * progress;
+                    smoothExpandTo(target);
+                }
             }, CHAR_INTERVAL_MS);
-        }, 500);
+        }, REVEAL_START_DELAY);
     }
 
     function hideAll() {
         clearInterval(revealTimer);
+        cancelAnimationFrame(rafId);
         charSpans.forEach(s => s.classList.remove('shown'));
         revealIndex = 0;
+        smoothCollapseTo(COLLAPSED_HEIGHT);
     }
 
     function open() {
@@ -131,13 +214,6 @@
         toggleText.textContent = 'Свернуть письмо';
         isOpen = true;
         startReveal();
-
-        setTimeout(() => {
-            const rect = scroll.getBoundingClientRect();
-            if (rect.top < 0 || rect.top > window.innerHeight * 0.4) {
-                scroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 100);
     }
 
     function close() {
@@ -151,8 +227,6 @@
         if (isOpen) close();
         else open();
     });
-
-    // НИКАКОГО автооткрытия — только по тапу пользователя
 })();
 
 /* ============================================================
@@ -435,7 +509,6 @@
         const startOffsetX = (Math.random() - 0.5) * 30;
         const startOffsetY = (Math.random() - 0.5) * 16;
 
-        // Разлёт веером ВВЕРХ: угол от -75° до -105°, высоко.
         const angle = -(Math.PI / 2) + (Math.random() - 0.5) * (Math.PI * 0.55);
         const speed = 320 + Math.random() * 320;
         let vx = Math.cos(angle) * speed;
@@ -448,11 +521,9 @@
         const rotSpeed = (Math.random() - 0.5) * 220;
         let rot = rotStart;
 
-        // Базовая гравитация тянет вниз мягко.
-        // При наклоне ОТ СЕБЯ (beta уменьшается) — сильная тяга вверх.
         const BASE_GRAV   = 900;
         const GYRO_GRAV_X = 2200;
-        const GYRO_GRAV_Y = 1600;   // усилил, чтобы уносило выше
+        const GYRO_GRAV_Y = 1600;
         const DRAG = 0.99;
 
         const startTime = performance.now();
@@ -464,9 +535,7 @@
             lastTime = now;
             const elapsed = now - startTime;
 
-            // Если телефон наклонён от себя (gravity.y < 0) —
-            // добавляем «попутный» импульс вверх, чтобы сердечки
-            // реально доходили до верха и уходили за экран.
+            // Если телефон наклонён от себя — добавляем импульс вверх
             const tiltForward = Math.max(0, -gravity.y);
             const extraUp = tiltForward * 1200;
 
@@ -495,8 +564,7 @@
                 `translate(${px}px, ${py}px) rotate(${rot}deg) scale(${scale})`;
             heart.style.opacity = opacity;
 
-            // ВЕРХНЮЮ границу убрали — сердечки уходят за верх экрана свободно.
-            // Оставляем только: низ, лево, право + общий таймаут жизни.
+            // Верхняя граница убрана — сердечки уходят за верх экрана свободно
             const bottomLimit = window.innerHeight + 300;
             const rightLimit  = window.innerWidth  + 300;
             const leftLimit   = -300;
