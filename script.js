@@ -6,10 +6,8 @@
     for (let i = 0; i < count; i++) {
         const h = document.createElement('span');
         h.className = 'h ' + (i % 3 === 0 ? 'c2' : i % 3 === 1 ? 'c3' : '');
-        // распределяем по ширине с небольшим случайным сдвигом
         const leftPercent = (i / (count - 1)) * 100;
         h.style.left = `calc(${leftPercent}% - 11px)`;
-        // случайное вертикальное смещение для «живой» нити
         h.style.top = `${4 + Math.sin(i * 1.3) * 4}px`;
         garland.appendChild(h);
     }
@@ -20,42 +18,42 @@
     const rain = document.getElementById('rain');
     if (!rain) return;
 
-    const COUNT = 22;
+    const COUNT = 45;
     const drops = [];
 
     for (let i = 0; i < COUNT; i++) {
         const d = document.createElement('span');
         d.className = 'drop ' + (i % 3 === 0 ? 'c2' : i % 3 === 1 ? 'c3' : '');
         d.style.left = Math.random() * 100 + '%';
-        d.style.animationDuration = (5 + Math.random() * 5) + 's';
-        d.style.animationDelay = (Math.random() * 6) + 's';
-        const size = 12 + Math.random() * 12;
+
+        // 9-18 сек — падают заметно дольше
+        d.style.animationDuration = (9 + Math.random() * 9) + 's';
+        d.style.animationDelay = (Math.random() * 10) + 's';
+
+        const size = 12 + Math.random() * 14;
         d.style.width = size + 'px';
         d.style.height = size + 'px';
         rain.appendChild(d);
         drops.push(d);
     }
 
-    // Останавливаем дождь, когда пользователь доскроллил до письма
     let stopped = false;
     const letter = document.getElementById('letter');
 
     function checkScroll() {
         if (stopped || !letter) return;
         const rect = letter.getBoundingClientRect();
-        // как только верх письма поднялся выше 40% высоты экрана — плавно гасим дождь
         if (rect.top < window.innerHeight * 0.4) {
             stopped = true;
             rain.classList.add('fade-out');
             setTimeout(() => {
                 rain.innerHTML = '';
-            }, 1400);
+            }, 2200);
             window.removeEventListener('scroll', checkScroll);
         }
     }
 
     window.addEventListener('scroll', checkScroll, { passive: true });
-    // первичная проверка (вдруг страница уже прокручена)
     setTimeout(checkScroll, 600);
 })();
 
@@ -67,7 +65,6 @@
     const text = p.textContent;
     p.textContent = '';
 
-    // Разбиваем на строки по предложениям, чтобы анимация была плавной
     const parts = text.split(/(?<=[.!?])\s+/);
     let delay = 0.4;
 
@@ -122,10 +119,40 @@
                 logging: false,
             });
 
-            const link = document.createElement('a');
-            link.download = 'с-днем-рождения.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            // Получаем blob (файл) из canvas
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            if (!blob) throw new Error('Не удалось создать изображение');
+
+            const fileName = 'с-днем-рождения.png';
+            const file = new File([blob], fileName, { type: 'image/png' });
+
+            // Проверяем поддержку Web Share API с файлами (iPhone, Android)
+            const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] });
+
+            if (canShareFiles) {
+                // На iPhone откроется системное меню → «Сохранить изображение» → Галерея
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'С днём рождения',
+                        text: 'Открытка для тебя 💗',
+                    });
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.warn('Share error:', err);
+                    }
+                }
+            } else {
+                // Fallback для ПК / старых браузеров — обычное скачивание
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }
         } catch (e) {
             console.error(e);
             alert('Не получилось сохранить картинку 😔');
