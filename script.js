@@ -1,4 +1,4 @@
-/* ============ ГИРЛЯНДА ИЗ СЕРДЕЧЕК ============ */
+/* ============ ГИРЛЯНДА ============ */
 (function buildGarland() {
     const garland = document.querySelector('.garland');
     if (!garland) return;
@@ -19,14 +19,12 @@
     if (!rain) return;
 
     const COUNT = 45;
-
     for (let i = 0; i < COUNT; i++) {
         const d = document.createElement('span');
         d.className = 'drop ' + (i % 3 === 0 ? 'c2' : i % 3 === 1 ? 'c3' : '');
         d.style.left = Math.random() * 100 + '%';
         d.style.animationDuration = (9 + Math.random() * 9) + 's';
         d.style.animationDelay = (Math.random() * 10) + 's';
-
         const size = 12 + Math.random() * 14;
         d.style.width = size + 'px';
         d.style.height = size + 'px';
@@ -51,7 +49,7 @@
     setTimeout(checkScroll, 600);
 })();
 
-/* ============ ПОЯВЛЕНИЕ ТЕКСТА ПИСЬМА ============ */
+/* ============ ПОЯВЛЕНИЕ ТЕКСТА ============ */
 (function revealText() {
     const p = document.getElementById('letterText');
     if (!p) return;
@@ -87,190 +85,108 @@
     });
 })();
 
-/* ============ СОХРАНИТЬ КАК КАРТИНКУ (foreignObject) ============ */
-(function saveAsImage() {
-    const btn = document.getElementById('saveBtn');
-    const card = document.getElementById('card');
-    if (!btn || !card) return;
+/* ============ КОНФЕТТИ ИЗ СЕРДЕЧЕК ============ */
+(function heartsConfetti() {
+    const btn = document.getElementById('heartsBtn');
+    const layer = document.getElementById('confettiLayer');
+    if (!btn || !layer) return;
 
-    btn.addEventListener('click', async () => {
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = '⏳ Сохраняю...';
+    // сколько сердечек вылетает за один клик
+    const PER_BURST = 22;
 
-        // 1) Показываем весь текст письма
-        const revealLines = card.querySelectorAll('.reveal-line');
-        const lineBackup = [];
-        revealLines.forEach(el => {
-            lineBackup.push({
-                el,
-                opacity: el.style.opacity,
-                animation: el.style.animation,
-                filter: el.style.filter,
-                animationDelay: el.style.animationDelay,
-            });
-            el.style.animation = 'none';
-            el.style.animationDelay = '0s';
-            el.style.opacity = '1';
-            el.style.filter = 'none';
-        });
+    // сколько всего сердечек может быть одновременно (мягкий предел для производительности)
+    const MAX_ACTIVE = 400;
 
-        // 2) Прячем гирлянду и дождь
-        const garland = document.querySelector('.garland');
-        const rain = document.getElementById('rain');
-        const garlandDisplay = garland ? garland.style.display : null;
-        const rainDisplay = rain ? rain.style.display : null;
-        if (garland) garland.style.display = 'none';
-        if (rain) rain.style.display = 'none';
+    let activeCount = 0;
 
-        // 3) Отключаем backdrop-filter и тени
-        const cardBackdrop = card.style.backdropFilter;
-        const cardWebkitBackdrop = card.style.webkitBackdropFilter;
-        const cardBoxShadow = card.style.boxShadow;
-        card.style.backdropFilter = 'none';
-        card.style.webkitBackdropFilter = 'none';
-        card.style.boxShadow = 'none';
+    btn.addEventListener('click', (e) => {
+        // позиция кнопки в момент клика (или центр кнопки, если клик по клавиатуре)
+        const rect = btn.getBoundingClientRect();
+        const originX = (e.clientX && e.clientX !== 0)
+            ? e.clientX
+            : rect.left + rect.width / 2;
+        const originY = (e.clientY && e.clientY !== 0)
+            ? e.clientY
+            : rect.top + rect.height / 2;
 
-        // 4) Ждём перерисовку
-        await new Promise(r => setTimeout(r, 120));
-
-        try {
-            let blob = await renderViaForeignObject(card);
-
-            if (!blob && typeof html2canvas !== 'undefined') {
-                const isDark = document.body.classList.contains('dark');
-                const canvas = await html2canvas(card, {
-                    backgroundColor: isDark ? '#3a2230' : '#ffffff',
-                    scale: 1,
-                    useCORS: true,
-                    logging: false,
-                });
-                blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-            }
-
-            if (!blob) throw new Error('Не удалось создать изображение');
-
-            const fileName = 'с-днем-рождения.png';
-            const file = new File([blob], fileName, { type: 'image/png' });
-
-            const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] });
-
-            if (canShareFiles) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'С днём рождения',
-                        text: 'Открытка для тебя 💗',
-                    });
-                } catch (err) {
-                    if (err.name !== 'AbortError') console.warn('Share error:', err);
-                }
-            } else {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = url;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            }
-        } catch (e) {
-            console.error(e);
-            alert('Не получилось сохранить картинку 😔');
-        } finally {
-            lineBackup.forEach(({ el, opacity, animation, filter, animationDelay }) => {
-                el.style.opacity = opacity;
-                el.style.animation = animation;
-                el.style.filter = filter;
-                el.style.animationDelay = animationDelay;
-            });
-            if (garland) garland.style.display = garlandDisplay;
-            if (rain) rain.style.display = rainDisplay;
-            card.style.backdropFilter = cardBackdrop;
-            card.style.webkitBackdropFilter = cardWebkitBackdrop;
-            card.style.boxShadow = cardBoxShadow;
-
-            btn.disabled = false;
-            btn.textContent = originalText;
-        }
+        spawnBurst(originX, originY);
     });
 
-    /**
-     * Рендер DOM-узла в PNG через SVG <foreignObject>.
-     * Нативно работает в Safari, Chrome, Firefox.
-     */
-    async function renderViaForeignObject(node) {
-        try {
-            const rect = node.getBoundingClientRect();
-            const width = Math.ceil(rect.width);
-            const height = Math.ceil(rect.height);
+    function spawnBurst(x, y) {
+        const count = PER_BURST;
 
-            const clone = node.cloneNode(true);
-            inlineStyles(node, clone);
+        for (let i = 0; i < count; i++) {
+            // ограничиваем, чтобы не залагало при очень частых кликах
+            if (activeCount >= MAX_ACTIVE) return;
 
-            const wrapper = document.createElement('div');
-            wrapper.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-            wrapper.style.width = width + 'px';
-            wrapper.style.height = height + 'px';
-            wrapper.style.background = '#ffffff';
-            wrapper.style.padding = '0';
-            wrapper.style.margin = '0';
-            wrapper.appendChild(clone);
+            const heart = document.createElement('span');
+            heart.className = 'confetti-heart ' +
+                (Math.random() < 0.33 ? 'c2' : Math.random() < 0.5 ? 'c3' : '');
 
-            const serialized = new XMLSerializer().serializeToString(wrapper);
+            // размер
+            const size = 12 + Math.random() * 18;
+            heart.style.width = size + 'px';
+            heart.style.height = size + 'px';
 
-            const svg =
-                `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
-                `<foreignObject width="100%" height="100%">` +
-                serialized +
-                `</foreignObject></svg>`;
+            // позиция
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
 
-            const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(svgBlob);
+            // начальный сдвиг внутри кнопки, чтобы сердечки вылетали «изнутри»
+            const startOffsetX = (Math.random() - 0.5) * 40;
+            const startOffsetY = (Math.random() - 0.5) * 20;
 
-            const img = await new Promise((resolve, reject) => {
-                const image = new Image();
-                image.onload = () => resolve(image);
-                image.onerror = reject;
-                image.src = url;
-            });
+            // разлёт: вверх и в стороны
+            const angle = (Math.random() * Math.PI) - (Math.PI / 2); // -90°..90°
+            const velocity = 120 + Math.random() * 220;              // px
+            const dx = Math.sin(angle) * velocity;
+            const dy = -Math.abs(Math.cos(angle)) * velocity - 40;   // всегда вверх
 
-            const canvas = document.createElement('canvas');
-            canvas.width = width * 2;
-            canvas.height = height * 2;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.scale(2, 2);
-            ctx.drawImage(img, 0, 0, width, height);
+            // поворот и вращение
+            const rotStart = (Math.random() - 0.5) * 60;
+            const rotEnd = rotStart + (Math.random() - 0.5) * 720;
 
-            URL.revokeObjectURL(url);
+            const duration = 1400 + Math.random() * 1400; // 1.4–2.8 сек
 
-            return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-        } catch (e) {
-            console.warn('foreignObject failed:', e);
-            return null;
+            layer.appendChild(heart);
+            activeCount++;
+
+            const anim = heart.animate(
+                [
+                    {
+                        transform: `translate(${startOffsetX}px, ${startOffsetY}px) rotate(${rotStart}deg) scale(0.4)`,
+                        opacity: 0,
+                    },
+                    {
+                        transform: `translate(${startOffsetX * 0.5 + dx * 0.25}px, ${startOffsetY + dy * 0.25}px) rotate(${rotStart + (rotEnd - rotStart) * 0.25}deg) scale(1.1)`,
+                        opacity: 1,
+                        offset: 0.15,
+                    },
+                    {
+                        transform: `translate(${dx}px, ${dy}px) rotate(${rotEnd}deg) scale(1)`,
+                        opacity: 1,
+                        offset: 0.7,
+                    },
+                    {
+                        transform: `translate(${dx * 1.05}px, ${dy + 420}px) rotate(${rotEnd + 60}deg) scale(0.9)`,
+                        opacity: 0,
+                    },
+                ],
+                {
+                    duration: duration,
+                    easing: 'cubic-bezier(0.22, 0.9, 0.35, 1)',
+                    fill: 'forwards',
+                }
+            );
+
+            anim.onfinish = () => {
+                heart.remove();
+                activeCount--;
+            };
+            anim.oncancel = () => {
+                heart.remove();
+                activeCount--;
+            };
         }
-    }
-
-    function inlineStyles(source, target) {
-        const sourceChildren = source.querySelectorAll('*');
-        const targetChildren = target.querySelectorAll('*');
-        copyStyle(source, target);
-        for (let i = 0; i < sourceChildren.length; i++) {
-            copyStyle(sourceChildren[i], targetChildren[i]);
-        }
-    }
-
-    function copyStyle(src, dst) {
-        const computed = window.getComputedStyle(src);
-        let css = '';
-        for (let i = 0; i < computed.length; i++) {
-            const prop = computed[i];
-            if (prop === 'backdrop-filter' || prop === 'webkit-backdrop-filter') continue;
-            css += `${prop}:${computed.getPropertyValue(prop)};`;
-        }
-        dst.setAttribute('style', css);
     }
 })();
