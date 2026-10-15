@@ -87,23 +87,18 @@
     });
 })();
 
-/* ============ СОХРАНИТЬ КАК КАРТИНКУ ============ */
+/* ============ СОХРАНИТЬ КАК КАРТИНКУ (foreignObject) ============ */
 (function saveAsImage() {
     const btn = document.getElementById('saveBtn');
     const card = document.getElementById('card');
     if (!btn || !card) return;
 
     btn.addEventListener('click', async () => {
-        if (typeof html2canvas === 'undefined') {
-            alert('Не удалось загрузить библиотеку. Проверьте интернет.');
-            return;
-        }
-
         const originalText = btn.textContent;
         btn.disabled = true;
         btn.textContent = '⏳ Сохраняю...';
 
-        // ---- СОХРАНЯЕМ оригинальные inline-стили, чтобы потом вернуть ----
+        // 1) Показываем весь текст письма
         const revealLines = card.querySelectorAll('.reveal-line');
         const lineBackup = [];
         revealLines.forEach(el => {
@@ -120,22 +115,7 @@
             el.style.filter = 'none';
         });
 
-        // Отключаем все анимации внутри карточки
-        const cardAnimBackup = card.style.animation;
-        card.style.animation = 'none';
-
-        // Отключаем backdrop-filter (глючит в html2canvas на Safari)
-        const backdropBackup = card.style.backdropFilter;
-        const webkitBackdropBackup = card.style.webkitBackdropFilter;
-        card.style.backdropFilter = 'none';
-        card.style.webkitBackdropFilter = 'none';
-
-        // Явный фон карточки — чтобы не зависеть от rgba и темы
-        const isDark = document.body.classList.contains('dark');
-        const cardBgBackup = card.style.background;
-        card.style.background = isDark ? '#3a2230' : '#ffffff';
-
-        // Прячем гирлянду и падающие сердечки, чтобы не портили снимок
+        // 2) Прячем гирлянду и дождь
         const garland = document.querySelector('.garland');
         const rain = document.getElementById('rain');
         const garlandDisplay = garland ? garland.style.display : null;
@@ -143,25 +123,31 @@
         if (garland) garland.style.display = 'none';
         if (rain) rain.style.display = 'none';
 
-        // Даём браузеру перерисовать
-        await new Promise(r => requestAnimationFrame(() => setTimeout(r, 80)));
+        // 3) Отключаем backdrop-filter и тени
+        const cardBackdrop = card.style.backdropFilter;
+        const cardWebkitBackdrop = card.style.webkitBackdropFilter;
+        const cardBoxShadow = card.style.boxShadow;
+        card.style.backdropFilter = 'none';
+        card.style.webkitBackdropFilter = 'none';
+        card.style.boxShadow = 'none';
+
+        // 4) Ждём перерисовку
+        await new Promise(r => setTimeout(r, 120));
 
         try {
-            const canvas = await html2canvas(card, {
-                backgroundColor: isDark ? '#3a2230' : '#ffffff',
-                scale: 1,                     // без scale — чтобы не упереться в лимит высоты Safari
-                useCORS: true,
-                logging: false,
-                allowTaint: false,
-                scrollX: 0,
-                scrollY: 0,
-                windowWidth: card.scrollWidth,
-                windowHeight: card.scrollHeight,
-                width: card.scrollWidth,
-                height: card.scrollHeight,
-            });
+            let blob = await renderViaForeignObject(card);
 
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            if (!blob && typeof html2canvas !== 'undefined') {
+                const isDark = document.body.classList.contains('dark');
+                const canvas = await html2canvas(card, {
+                    backgroundColor: isDark ? '#3a2230' : '#ffffff',
+                    scale: 1,
+                    useCORS: true,
+                    logging: false,
+                });
+                blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+            }
+
             if (!blob) throw new Error('Не удалось создать изображение');
 
             const fileName = 'с-днем-рождения.png';
@@ -193,22 +179,98 @@
             console.error(e);
             alert('Не получилось сохранить картинку 😔');
         } finally {
-            // ---- Возвращаем всё как было ----
             lineBackup.forEach(({ el, opacity, animation, filter, animationDelay }) => {
                 el.style.opacity = opacity;
                 el.style.animation = animation;
                 el.style.filter = filter;
                 el.style.animationDelay = animationDelay;
             });
-            card.style.animation = cardAnimBackup;
-            card.style.backdropFilter = backdropBackup;
-            card.style.webkitBackdropFilter = webkitBackdropBackup;
-            card.style.background = cardBgBackup;
             if (garland) garland.style.display = garlandDisplay;
             if (rain) rain.style.display = rainDisplay;
+            card.style.backdropFilter = cardBackdrop;
+            card.style.webkitBackdropFilter = cardWebkitBackdrop;
+            card.style.boxShadow = cardBoxShadow;
 
             btn.disabled = false;
             btn.textContent = originalText;
         }
     });
+
+    /**
+     * Рендер DOM-узла в PNG через SVG <foreignObject>.
+     * Нативно работает в Safari, Chrome, Firefox.
+     */
+    async function renderViaForeignObject(node) {
+        try {
+            const rect = node.getBoundingClientRect();
+            const width = Math.ceil(rect.width);
+            const height = Math.ceil(rect.height);
+
+            const clone = node.cloneNode(true);
+            inlineStyles(node, clone);
+
+            const wrapper = document.createElement('div');
+            wrapper.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+            wrapper.style.width = width + 'px';
+            wrapper.style.height = height + 'px';
+            wrapper.style.background = '#ffffff';
+            wrapper.style.padding = '0';
+            wrapper.style.margin = '0';
+            wrapper.appendChild(clone);
+
+            const serialized = new XMLSerializer().serializeToString(wrapper);
+
+            const svg =
+                `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+                `<foreignObject width="100%" height="100%">` +
+                serialized +
+                `</foreignObject></svg>`;
+
+            const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            const img = await new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve(image);
+                image.onerror = reject;
+                image.src = url;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width * 2;
+            canvas.height = height * 2;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.scale(2, 2);
+            ctx.drawImage(img, 0, 0, width, height);
+
+            URL.revokeObjectURL(url);
+
+            return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        } catch (e) {
+            console.warn('foreignObject failed:', e);
+            return null;
+        }
+    }
+
+    function inlineStyles(source, target) {
+        const sourceChildren = source.querySelectorAll('*');
+        const targetChildren = target.querySelectorAll('*');
+        copyStyle(source, target);
+        for (let i = 0; i < sourceChildren.length; i++) {
+            copyStyle(sourceChildren[i], targetChildren[i]);
+        }
+    }
+
+    function copyStyle(src, dst) {
+        const computed = window.getComputedStyle(src);
+        let css = '';
+        for (let i = 0; i < computed.length; i++) {
+            const prop = computed[i];
+            if (prop === 'backdrop-filter' || prop === 'webkit-backdrop-filter') continue;
+            css += `${prop}:${computed.getPropertyValue(prop)};`;
+        }
+        dst.setAttribute('style', css);
+    }
 })();
