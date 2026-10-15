@@ -91,16 +91,11 @@
     const layer = document.getElementById('confettiLayer');
     if (!btn || !layer) return;
 
-    // сколько сердечек вылетает за один клик
     const PER_BURST = 22;
-
-    // сколько всего сердечек может быть одновременно (мягкий предел для производительности)
     const MAX_ACTIVE = 400;
-
     let activeCount = 0;
 
     btn.addEventListener('click', (e) => {
-        // позиция кнопки в момент клика (или центр кнопки, если клик по клавиатуре)
         const rect = btn.getBoundingClientRect();
         const originX = (e.clientX && e.clientX !== 0)
             ? e.clientX
@@ -113,40 +108,33 @@
     });
 
     function spawnBurst(x, y) {
-        const count = PER_BURST;
-
-        for (let i = 0; i < count; i++) {
-            // ограничиваем, чтобы не залагало при очень частых кликах
+        for (let i = 0; i < PER_BURST; i++) {
             if (activeCount >= MAX_ACTIVE) return;
 
             const heart = document.createElement('span');
             heart.className = 'confetti-heart ' +
                 (Math.random() < 0.33 ? 'c2' : Math.random() < 0.5 ? 'c3' : '');
 
-            // размер
-            const size = 12 + Math.random() * 18;
+            const size = 14 + Math.random() * 20;
             heart.style.width = size + 'px';
             heart.style.height = size + 'px';
-
-            // позиция
             heart.style.left = x + 'px';
             heart.style.top = y + 'px';
 
-            // начальный сдвиг внутри кнопки, чтобы сердечки вылетали «изнутри»
-            const startOffsetX = (Math.random() - 0.5) * 40;
-            const startOffsetY = (Math.random() - 0.5) * 20;
+            const startOffsetX = (Math.random() - 0.5) * 30;
+            const startOffsetY = (Math.random() - 0.5) * 16;
 
-            // разлёт: вверх и в стороны
-            const angle = (Math.random() * Math.PI) - (Math.PI / 2); // -90°..90°
-            const velocity = 120 + Math.random() * 220;              // px
-            const dx = Math.sin(angle) * velocity;
-            const dy = -Math.abs(Math.cos(angle)) * velocity - 40;   // всегда вверх
+            // Разлёт веером ВВЕРХ: плотный конус около вертикали
+            const angle = -(Math.PI / 2) + (Math.random() - 0.5) * (Math.PI * 0.55);
+            const velocity = 320 + Math.random() * 320;
+            const dx = Math.cos(angle) * velocity;
+            const dy = Math.sin(angle) * velocity;
 
-            // поворот и вращение
             const rotStart = (Math.random() - 0.5) * 60;
-            const rotEnd = rotStart + (Math.random() - 0.5) * 720;
+            const rotEnd = rotStart + (Math.random() - 0.5) * 540;
 
-            const duration = 1400 + Math.random() * 1400; // 1.4–2.8 сек
+            // Длительность больше — плавнее и дольше
+            const duration = 2400 + Math.random() * 1600;
 
             layer.appendChild(heart);
             activeCount++;
@@ -156,37 +144,34 @@
                     {
                         transform: `translate(${startOffsetX}px, ${startOffsetY}px) rotate(${rotStart}deg) scale(0.4)`,
                         opacity: 0,
+                        easing: 'cubic-bezier(0.18, 0.9, 0.3, 1)',
                     },
                     {
-                        transform: `translate(${startOffsetX * 0.5 + dx * 0.25}px, ${startOffsetY + dy * 0.25}px) rotate(${rotStart + (rotEnd - rotStart) * 0.25}deg) scale(1.1)`,
+                        transform: `translate(${dx * 0.9}px, ${dy * 0.9}px) rotate(${rotStart + (rotEnd - rotStart) * 0.4}deg) scale(1.15)`,
                         opacity: 1,
-                        offset: 0.15,
+                        offset: 0.45,
+                        easing: 'cubic-bezier(0.35, 0, 0.65, 1)',
                     },
                     {
-                        transform: `translate(${dx}px, ${dy}px) rotate(${rotEnd}deg) scale(1)`,
+                        transform: `translate(${dx * 1.05}px, ${dy * 0.4}px) rotate(${rotEnd}deg) scale(1)`,
                         opacity: 1,
                         offset: 0.7,
+                        easing: 'cubic-bezier(0.4, 0, 0.7, 0.5)',
                     },
                     {
-                        transform: `translate(${dx * 1.05}px, ${dy + 420}px) rotate(${rotEnd + 60}deg) scale(0.9)`,
+                        transform: `translate(${dx * 1.1}px, ${dy + 700}px) rotate(${rotEnd + 40}deg) scale(0.95)`,
                         opacity: 0,
                     },
                 ],
                 {
                     duration: duration,
-                    easing: 'cubic-bezier(0.22, 0.9, 0.35, 1)',
+                    easing: 'linear',
                     fill: 'forwards',
                 }
             );
 
-            anim.onfinish = () => {
-                heart.remove();
-                activeCount--;
-            };
-            anim.oncancel = () => {
-                heart.remove();
-                activeCount--;
-            };
+            anim.onfinish = () => { heart.remove(); activeCount--; };
+            anim.oncancel = () => { heart.remove(); activeCount--; };
         }
     }
 })();
