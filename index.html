@@ -7,13 +7,10 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Падающие сердечки (останавливаются при скролле к тексту) -->
     <div class="rain" id="rain" aria-hidden="true"></div>
-
-    <!-- Гирлянда из рисованных сердечек -->
     <div class="garland" aria-hidden="true"></div>
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
 
-    <!-- Переключатель темы -->
     <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
         <span class="icon-sun">☀️</span>
         <span class="icon-moon">🌙</span>
@@ -45,11 +42,9 @@
             <span class="paw">🐾</span>
         </div>
 
-        <button class="save-btn" id="saveBtn">💾 Сохранить как картинку</button>
+        <button class="hearts-btn" id="heartsBtn">💗 Сердечки</button>
     </main>
 
-    <!-- html2canvas для сохранения открытки -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
