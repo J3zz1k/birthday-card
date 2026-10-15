@@ -21,9 +21,9 @@
     --shadow-1: rgba(232, 107, 160, 0.22);
     --shadow-2: rgba(232, 107, 160, 0.12);
     --paw-color: rgba(255, 158, 196, 0.12);
-    --heart-color: #ff5c9e;
-    --heart-color-2: #ff7fb0;
-    --heart-color-3: #ffa8c8;
+    --heart-color: #e6003c;
+    --heart-color-2: #ff1f5a;
+    --heart-color-3: #c9002f;
     --btn-bg: #ff9ec4;
     --btn-text: #ffffff;
     --toggle-bg: rgba(255, 255, 255, 0.85);
@@ -47,9 +47,9 @@ body.dark {
     --shadow-1: rgba(0, 0, 0, 0.4);
     --shadow-2: rgba(0, 0, 0, 0.25);
     --paw-color: rgba(255, 158, 196, 0.08);
-    --heart-color: #ff6aa8;
-    --heart-color-2: #ff8bbc;
-    --heart-color-3: #ffb0ce;
+    --heart-color: #ff2a5a;
+    --heart-color-2: #ff4d76;
+    --heart-color-3: #e6003c;
     --btn-bg: #ff9ec4;
     --btn-text: #2a1a22;
     --toggle-bg: rgba(58, 34, 48, 0.85);
@@ -90,7 +90,7 @@ body::before {
     transition: color 0.5s ease;
 }
 
-/* ---------- ГИРЛЯНДА (CSS-сердечки) ---------- */
+/* ---------- ГИРЛЯНДА ---------- */
 .garland {
     position: fixed;
     top: 0;
@@ -123,7 +123,7 @@ body::before {
     height: 22px;
     transform-origin: top center;
     animation: garlandSwing 3s ease-in-out infinite;
-    filter: drop-shadow(0 3px 5px rgba(232, 107, 160, 0.35));
+    filter: drop-shadow(0 3px 5px rgba(230, 0, 60, 0.35));
 }
 
 .garland .h::before,
@@ -180,7 +180,7 @@ body::before {
     width: 18px;
     height: 18px;
     animation: fall linear infinite;
-    filter: drop-shadow(0 2px 4px rgba(232, 107, 160, 0.4));
+    filter: drop-shadow(0 2px 4px rgba(230, 0, 60, 0.45));
 }
 
 .rain .drop::before,
@@ -231,6 +231,7 @@ body::before {
     height: 20px;
     will-change: transform, opacity;
     pointer-events: none;
+    filter: drop-shadow(0 0 6px rgba(230, 0, 60, 0.55));
 }
 
 .confetti-heart::before,
@@ -467,13 +468,13 @@ h1 {
     padding: 14px 28px;
     border: none;
     border-radius: 999px;
-    background: linear-gradient(135deg, #ff9ec4 0%, #ff5c9e 100%);
+    background: linear-gradient(135deg, #ff1f5a 0%, #c9002f 100%);
     color: #ffffff;
     font-size: 16px;
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    box-shadow: 0 8px 22px rgba(255, 92, 158, 0.45);
+    box-shadow: 0 8px 22px rgba(230, 0, 60, 0.45);
     transition: transform 0.15s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
@@ -481,7 +482,7 @@ h1 {
 }
 .hearts-btn:active {
     transform: scale(0.94);
-    box-shadow: 0 4px 14px rgba(255, 92, 158, 0.5);
+    box-shadow: 0 4px 14px rgba(230, 0, 60, 0.5);
 }
 
 @media (max-width: 480px) {
