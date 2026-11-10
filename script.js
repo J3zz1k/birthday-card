@@ -6,10 +6,11 @@
     if (!garland) return;
 
     const count = 20;
+    // Даты: 14.02 (начало), 14.05 (3 месяца), 14.11 (9 месяцев)
     const datePositions = {
-        4:  '04.02',
-        9:  '14.02',
-        15: '14.10',
+        4:  '14.02',
+        9:  '14.05',
+        15: '14.11',
     };
 
     for (let i = 0; i < count; i++) {
@@ -72,7 +73,6 @@
 
 /* ============================================================
    3. СВИТОК ПИСЬМА — РАЗВОРАЧИВАНИЕ ПО ТАПУ + ПОБУКВЕННОЕ ПОЯВЛЕНИЕ
-   Синхронизация: сколько текста видно — настолько раскрыт свиток
    ============================================================ */
 (function scrollLetter() {
     const p = document.getElementById('letterText');
@@ -82,7 +82,6 @@
     const toggleText = document.getElementById('scrollToggleText');
     if (!p || !scroll || !scrollBody || !toggle) return;
 
-    // --- 1. Сохраняем текст и разбиваем на буквы ---
     const fullText = p.textContent;
     p.textContent = '';
     p.setAttribute('aria-label', fullText);
@@ -96,7 +95,6 @@
         charSpans.push(span);
     }
 
-    // --- 2. Измеряем полную высоту текста ---
     function measureFullHeight() {
         charSpans.forEach(s => s.classList.add('shown'));
         scrollBody.style.maxHeight = 'none';
@@ -121,7 +119,6 @@
         setTimeout(initMeasure, 300);
     }
 
-    // --- 3. Побуквенное появление + плавное раскрытие свитка ---
     let isOpen = false;
     let revealTimer = null;
     let revealIndex = 0;
@@ -141,9 +138,7 @@
             const eased = 1 - Math.pow(1 - t, 3);
             const h = startHeight + (targetHeight - startHeight) * eased;
             scrollBody.style.maxHeight = h + 'px';
-            if (t < 1) {
-                rafId = requestAnimationFrame(step);
-            }
+            if (t < 1) rafId = requestAnimationFrame(step);
         }
         rafId = requestAnimationFrame(step);
     }
@@ -159,9 +154,7 @@
             const eased = 1 - Math.pow(1 - t, 3);
             const h = startHeight + (targetHeight - startHeight) * eased;
             scrollBody.style.maxHeight = h + 'px';
-            if (t < 1) {
-                rafId = requestAnimationFrame(step);
-            }
+            if (t < 1) rafId = requestAnimationFrame(step);
         }
         rafId = requestAnimationFrame(step);
     }
@@ -174,9 +167,7 @@
         charSpans.forEach(s => s.classList.remove('shown'));
         scrollBody.style.maxHeight = COLLAPSED_HEIGHT + 'px';
 
-        if (!fullHeight) {
-            fullHeight = measureFullHeight();
-        }
+        if (!fullHeight) fullHeight = measureFullHeight();
 
         setTimeout(() => {
             revealTimer = setInterval(() => {
@@ -190,11 +181,9 @@
                 span.classList.add('shown');
                 revealIndex++;
 
-                // каждые 3 буквы — плавно тянем свиток
                 if (revealIndex % 3 === 0 || revealIndex === charSpans.length) {
                     const progress = revealIndex / charSpans.length;
-                    const target = COLLAPSED_HEIGHT +
-                        (fullHeight - COLLAPSED_HEIGHT) * progress;
+                    const target = COLLAPSED_HEIGHT + (fullHeight - COLLAPSED_HEIGHT) * progress;
                     smoothExpandTo(target);
                 }
             }, CHAR_INTERVAL_MS);
@@ -263,6 +252,7 @@
     const minsEl  = document.getElementById('minsCount');
     if (!daysEl) return;
 
+    // Начало отношений: 14 февраля 2026
     const START = new Date(2026, 1, 14, 0, 0, 0);
 
     function update() {
@@ -362,7 +352,6 @@
     const MAX_ACTIVE = 600;
     let activeCount = 0;
 
-    // ---- ГИРОСКОП ----
     const gravity = { x: 0, y: 0 };
     let gyroEnabled = false;
 
@@ -419,7 +408,6 @@
         }, true);
     }
 
-    // ---- ЛОГИКА НАЖАТИЙ ----
     let holdTimer = null;
     let isHolding = false;
     let holdInterval = null;
@@ -429,7 +417,6 @@
     function onPointerDown() {
         longPressTriggered = false;
         isHolding = false;
-
         ensureGyro();
 
         holdTimer = setTimeout(() => {
@@ -452,7 +439,6 @@
             const rect = btn.getBoundingClientRect();
             spawnBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
         }
-
         isHolding = false;
         holdInterval = null;
     }
@@ -464,7 +450,6 @@
         if (isHolding) onPointerUp();
     });
 
-    // ---- ВСПЛЕСКИ ----
     function spawnBurst(x, y) {
         for (let i = 0; i < PER_BURST; i++) {
             if (activeCount >= MAX_ACTIVE) return;
@@ -487,7 +472,6 @@
         }
     }
 
-    // ---- ФИЗИКА ----
     function createHeart(x, y, scaleMul = 1, isMega = false) {
         const heart = document.createElement('span');
         heart.className = 'confetti-heart ' +
@@ -535,7 +519,6 @@
             lastTime = now;
             const elapsed = now - startTime;
 
-            // Если телефон наклонён от себя — добавляем импульс вверх
             const tiltForward = Math.max(0, -gravity.y);
             const extraUp = tiltForward * 1200;
 
@@ -544,13 +527,10 @@
 
             vx += ax * dt;
             vy += ay * dt;
-
             vx *= DRAG;
             vy *= DRAG;
-
             px += vx * dt;
             py += vy * dt;
-
             rot += rotSpeed * dt;
 
             const lifeRatio = elapsed / lifeMs;
@@ -560,26 +540,20 @@
             if (lifeRatio > 0.7)  opacity = 1 - (lifeRatio - 0.7) / 0.3;
             if (lifeRatio < 0.05) opacity = lifeRatio / 0.05;
 
-            heart.style.transform =
-                `translate(${px}px, ${py}px) rotate(${rot}deg) scale(${scale})`;
+            heart.style.transform = `translate(${px}px, ${py}px) rotate(${rot}deg) scale(${scale})`;
             heart.style.opacity = opacity;
 
-            // Верхняя граница убрана — сердечки уходят за верх экрана свободно
             const bottomLimit = window.innerHeight + 300;
             const rightLimit  = window.innerWidth  + 300;
             const leftLimit   = -300;
 
-            if (elapsed >= lifeMs ||
-                py > bottomLimit ||
-                px > rightLimit  || px < leftLimit) {
+            if (elapsed >= lifeMs || py > bottomLimit || px > rightLimit || px < leftLimit) {
                 heart.remove();
                 activeCount--;
                 return;
             }
-
             requestAnimationFrame(frame);
         }
-
         requestAnimationFrame(frame);
     }
 })();
