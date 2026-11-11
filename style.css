@@ -8,7 +8,6 @@
    СВЕТЛАЯ ТЕМА — «iPhone 17 Pro White» (металлик)
    ========================================================== */
 :root {
-    /* Фон — «металлик», очень светлый серо-жемчужный */
     --bg-1: #fdfcfb;
     --bg-2: #f5f4f2;
     --bg-3: #e8e6e3;
@@ -46,9 +45,6 @@
     --transition-theme: 0.7s;
 }
 
-/* ==========================================================
-   ТЁМНАЯ ТЕМА — графитовый титан
-   ========================================================== */
 body.dark {
     --bg-1: #0a0a0b;
     --bg-2: #141416;
@@ -91,7 +87,6 @@ html, body {
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Georgia", serif;
-    /* Металлик-градиент: очень светлый, с жемчужным блеском */
     background:
         radial-gradient(ellipse at top, rgba(255, 255, 255, 0.9) 0%, transparent 60%),
         linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
@@ -450,6 +445,7 @@ body::before {
     border: 1px solid var(--card-border);
     border-radius: 20px;
     padding: 16px 20px;
+    padding-right: 44px; /* место под крестик */
     text-align: center;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     opacity: 0;
@@ -460,6 +456,12 @@ body::before {
 .final-secret.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+.final-secret.hide {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+    pointer-events: none;
 }
 .final-secret p {
     color: var(--pink-deep);
@@ -467,6 +469,27 @@ body::before {
     font-weight: 600;
     line-height: 1.5;
 }
+
+.final-secret-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: var(--pink-soft);
+    color: var(--pink-deep);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.final-secret-close:active { transform: scale(0.9); }
 
 /* ---------- ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ---------- */
 .theme-toggle {
@@ -744,7 +767,7 @@ h1 {
     50%      { transform: rotate(18deg); }
 }
 
-/* ---------- КНОПКА "СЕРДЕЧКИ" — нежно-розово-серый градиент ---------- */
+/* ---------- КНОПКА "СЕРДЕЧКИ" ---------- */
 .hearts-btn {
     display: block;
     margin: 26px auto 0;
