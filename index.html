@@ -3,14 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>С 9 месяцами, кися моя 💗</title>
-    <link rel="stylesheet" href="style.css?v=22">
+    <title>С 9 месяцами, кися моя 💖</title>
+    <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
+    <!-- Гирлянда по бокам -->
+    <div class="side-garland side-garland-left" aria-hidden="true"></div>
+    <div class="side-garland side-garland-right" aria-hidden="true"></div>
+
     <div class="rain" id="rain" aria-hidden="true"></div>
     <div class="garland" aria-hidden="true"></div>
     <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
     <div class="paw-trail" id="pawTrail" aria-hidden="true"></div>
+    <div class="sparkles" id="sparkles" aria-hidden="true"></div>
+
+    <!-- Секретное послание (скрыто по умолчанию) -->
+    <div class="secret-modal" id="secretModal" aria-hidden="true">
+        <div class="secret-content">
+            <button class="secret-close" id="secretClose" aria-label="Закрыть">✕</button>
+            <div class="secret-icon">💖</div>
+            <p class="secret-text">ты у меня самая любимая и самая милая</p>
+        </div>
+    </div>
+
+    <!-- Секретный финал -->
+    <div class="final-secret" id="finalSecret" aria-hidden="true">
+        <p>ты умничка что осталась тут, я тебя очень сильно люблю</p>
+    </div>
 
     <button class="gyro-btn" id="gyroBtn" hidden>🎈 Разрешить волшебство</button>
 
@@ -21,9 +40,11 @@
     </button>
 
     <main class="card" id="card">
-        <div class="cat-emoji">🐱</div>
+        <div class="cat-emoji" id="catSecret">🐈</div>
 
-        <h1>С 9 месяцами,<br>кися моя 💗</h1>
+        <div class="header-wrap">
+            <h1 id="mainTitle">С 9 месяцами,<br>кися моя 💖</h1>
+        </div>
 
         <div class="date-badge">9 месяцев</div>
 
@@ -45,14 +66,14 @@
             <div class="scroll-rod scroll-rod-bottom" aria-hidden="true"></div>
 
             <button class="scroll-toggle" id="scrollToggle" aria-label="Развернуть письмо">
-                <span class="scroll-toggle-icon">📜</span>
+                <span class="scroll-toggle-icon">✉️</span>
                 <span class="scroll-toggle-text" id="scrollToggleText">Развернуть письмо</span>
             </button>
         </div>
 
         <div class="final-love">
             <span>Люблю тебя</span>
-            <span class="love-heart">❤️</span>
+            <span class="love-heart">💝</span>
         </div>
 
         <div class="footer">
@@ -62,11 +83,14 @@
         </div>
 
         <button class="hearts-btn" id="heartsBtn">
-            <span class="btn-heart">💗</span> Сердечки
+            <span class="btn-heart">💕</span> Сердечки
         </button>
-        <div class="hint">зажми кнопку — будет сюрприз</div>
+
+        <button class="share-btn" id="shareBtn">
+            🔗 Поделиться
+        </button>
     </main>
 
-    <script src="script.js?v=22"></script>
+    <script src="script.js?v=23"></script>
 </body>
 </html>
