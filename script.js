@@ -6,7 +6,6 @@
     if (!garland) return;
 
     const count = 20;
-    // Даты: 14.02 (начало), 14.05 (3 месяца), 14.11 (9 месяцев)
     const datePositions = {
         4:  '14.02',
         9:  '14.05',
@@ -34,7 +33,28 @@
 })();
 
 /* ============================================================
-   2. ПАДАЮЩИЕ СЕРДЕЧКИ (фон)
+   2. ГИРЛЯНДА ПО БОКАМ
+   ============================================================ */
+(function buildSideGarland() {
+    const left = document.querySelector('.side-garland-left');
+    const right = document.querySelector('.side-garland-right');
+    if (!left || !right) return;
+
+    const count = 8;
+    [left, right].forEach(container => {
+        for (let i = 0; i < count; i++) {
+            const h = document.createElement('span');
+            h.className = 's-h ' + (i % 3 === 0 ? 'c2' : i % 3 === 1 ? 'c3' : '');
+            const topPercent = ((i + 0.5) / count) * 100;
+            h.style.top = topPercent + '%';
+            h.style.animationDelay = (i * 0.4) + 's';
+            container.appendChild(h);
+        }
+    });
+})();
+
+/* ============================================================
+   3. ПАДАЮЩИЕ СЕРДЕЧКИ
    ============================================================ */
 (function heartRain() {
     const rain = document.getElementById('rain');
@@ -72,7 +92,7 @@
 })();
 
 /* ============================================================
-   3. СВИТОК ПИСЬМА — РАЗВОРАЧИВАНИЕ ПО ТАПУ + ПОБУКВЕННОЕ ПОЯВЛЕНИЕ
+   4. СВИТОК ПИСЬМА
    ============================================================ */
 (function scrollLetter() {
     const p = document.getElementById('letterText');
@@ -219,7 +239,7 @@
 })();
 
 /* ============================================================
-   4. ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ
+   5. ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ
    ============================================================ */
 (function themeSwitch() {
     const btn = document.getElementById('themeToggle');
@@ -244,7 +264,7 @@
 })();
 
 /* ============================================================
-   5. СЧЁТЧИК ВМЕСТЕ
+   6. СЧЁТЧИК ВМЕСТЕ
    ============================================================ */
 (function togetherCounter() {
     const daysEl  = document.getElementById('daysCount');
@@ -252,7 +272,6 @@
     const minsEl  = document.getElementById('minsCount');
     if (!daysEl) return;
 
-    // Начало отношений: 14 февраля 2026
     const START = new Date(2026, 1, 14, 0, 0, 0);
 
     function update() {
@@ -275,7 +294,7 @@
 })();
 
 /* ============================================================
-   6. СЛЕДЫ КОТА
+   7. СЛЕДЫ КОТА
    ============================================================ */
 (function pawTrail() {
     const layer = document.getElementById('pawTrail');
@@ -341,7 +360,7 @@
 })();
 
 /* ============================================================
-   7. КОНФЕТТИ + ГИРОСКОП + ДОЛГОЕ НАЖАТИЕ
+   8. КОНФЕТТИ + ГИРОСКОП + ДОЛГОЕ НАЖАТИЕ
    ============================================================ */
 (function heartsConfetti() {
     const btn = document.getElementById('heartsBtn');
@@ -556,4 +575,137 @@
         }
         requestAnimationFrame(frame);
     }
+})();
+
+/* ============================================================
+   9. СЕКРЕТНОЕ ПОСЛАНИЕ (долгое нажатие на кота)
+   ============================================================ */
+(function secretMessage() {
+    const cat = document.getElementById('catSecret');
+    const modal = document.getElementById('secretModal');
+    const closeBtn = document.getElementById('secretClose');
+    if (!cat || !modal || !closeBtn) return;
+
+    let pressTimer = null;
+
+    function show() {
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function hide() {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
+    cat.addEventListener('pointerdown', () => {
+        pressTimer = setTimeout(show, 900);
+    });
+
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => {
+        cat.addEventListener(ev, () => {
+            clearTimeout(pressTimer);
+        });
+    });
+
+    closeBtn.addEventListener('click', hide);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) hide();
+    });
+})();
+
+/* ============================================================
+   10. СЕКРЕТНЫЙ ФИНАЛ (долгое бездействие внизу)
+   ============================================================ */
+(function finalSecret() {
+    const block = document.getElementById('finalSecret');
+    if (!block) return;
+
+    let idleTimer = null;
+    let shown = false;
+
+    function resetIdle() {
+        clearTimeout(idleTimer);
+        if (shown) return;
+        idleTimer = setTimeout(() => {
+            // показываем, только если пользователь доскроллил до конца
+            const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100;
+            if (isAtBottom) {
+                block.classList.add('show');
+                block.setAttribute('aria-hidden', 'false');
+                shown = true;
+            }
+        }, 10000);
+    }
+
+    ['scroll', 'touchstart', 'touchmove', 'mousemove', 'keydown'].forEach(ev => {
+        window.addEventListener(ev, resetIdle, { passive: true });
+    });
+
+    resetIdle();
+})();
+
+/* ============================================================
+   11. ИСКРЫ ВОКРУГ ЗАГОЛОВКА
+   ============================================================ */
+(function sparkles() {
+    const container = document.getElementById('sparkles');
+    const title = document.getElementById('mainTitle');
+    if (!container || !title) return;
+
+    // Запускаем через 1 секунду после загрузки
+    setTimeout(() => {
+        const rect = title.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const COUNT = 18;
+        for (let i = 0; i < COUNT; i++) {
+            const spark = document.createElement('span');
+            spark.className = 'sparkle';
+            const angle = (Math.PI * 2 * i) / COUNT;
+            const dist = 80 + Math.random() * 80;
+            const dx = Math.cos(angle) * dist;
+            const dy = Math.sin(angle) * dist;
+            spark.style.left = centerX + 'px';
+            spark.style.top = centerY + 'px';
+            spark.style.setProperty('--dx', dx + 'px');
+            spark.style.setProperty('--dy', dy + 'px');
+            spark.style.animationDelay = (Math.random() * 0.3) + 's';
+            container.appendChild(spark);
+
+            setTimeout(() => spark.remove(), 2500);
+        }
+    }, 1000);
+})();
+
+/* ============================================================
+   12. КНОПКА "ПОДЕЛИТЬСЯ"
+   ============================================================ */
+(function shareBtn() {
+    const btn = document.getElementById('shareBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+        const shareData = {
+            title: 'С 9 месяцами 💖',
+            text: 'Открытка для тебя 💖',
+            url: window.location.href
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                // fallback — копируем ссылку
+                await navigator.clipboard.writeText(window.location.href);
+                btn.textContent = '✅ Ссылка скопирована';
+                setTimeout(() => { btn.textContent = '🔗 Поделиться'; }, 2000);
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.warn('Share error:', e);
+            }
+        }
+    });
 })();
