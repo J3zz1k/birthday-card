@@ -621,20 +621,53 @@
     const block = document.getElementById('finalSecret');
     if (!block) return;
 
+    // Добавляем кнопку закрытия прямо в блок
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'final-secret-close';
+    closeBtn.setAttribute('aria-label', 'Закрыть');
+    closeBtn.textContent = '✕';
+    block.style.position = 'fixed';
+    block.appendChild(closeBtn);
+
     let idleTimer = null;
+    let hideTimer = null;
     let shown = false;
+    let dismissed = false; // если пользователь нажал крестик — больше не показываем
+
+    function show() {
+        if (shown || dismissed) return;
+        block.classList.add('show');
+        block.classList.remove('hide');
+        block.setAttribute('aria-hidden', 'false');
+        shown = true;
+
+        // Автоматически скрываем через 8 секунд
+        hideTimer = setTimeout(hide, 8000);
+    }
+
+    function hide() {
+        clearTimeout(hideTimer);
+        block.classList.remove('show');
+        block.classList.add('hide');
+        block.setAttribute('aria-hidden', 'true');
+        shown = false;
+    }
+
+    function dismiss() {
+        dismissed = true;
+        hide();
+    }
+
+    closeBtn.addEventListener('click', dismiss);
 
     function resetIdle() {
-        clearTimeout(idleTimer);
+        if (dismissed) return;
         if (shown) return;
+
+        clearTimeout(idleTimer);
         idleTimer = setTimeout(() => {
-            // показываем, только если пользователь доскроллил до конца
             const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100;
-            if (isAtBottom) {
-                block.classList.add('show');
-                block.setAttribute('aria-hidden', 'false');
-                shown = true;
-            }
+            if (isAtBottom) show();
         }, 10000);
     }
 
@@ -653,7 +686,6 @@
     const title = document.getElementById('mainTitle');
     if (!container || !title) return;
 
-    // Запускаем через 1 секунду после загрузки
     setTimeout(() => {
         const rect = title.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -697,7 +729,6 @@
             if (navigator.share) {
                 await navigator.share(shareData);
             } else {
-                // fallback — копируем ссылку
                 await navigator.clipboard.writeText(window.location.href);
                 btn.textContent = '✅ Ссылка скопирована';
                 setTimeout(() => { btn.textContent = '🔗 Поделиться'; }, 2000);
